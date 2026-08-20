@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hz.dream.dao.PropertyMapper">
+
+    <resultMap id="propertyMap" type="com.hz.dream.po.Property">
+        <id     property="id"                column="id"/>
+        <result property="tenantId"         column="tenant_id"/>
+        <result property="communityId"      column="community_id"/>
+        <result property="building"          column="building"/>
+        <result property="roomNo"            column="room_no"/>
+        <result property="floor"             column="floor"/>
+        <result property="totalFloor"       column="total_floor"/>
+        <result property="area"              column="area"/>
+        <result property="layout"            column="layout"/>
+        <result property="status"            column="status"/>
+        <result property="listingPrice"     column="listing_price"/>
+        <result property="firstListingTime" column="first_listing_time"/>
+        <result property="dealPrice"        column="deal_price"/>
+        <result property="recordPrice"      column="record_price"/>
+        <result property="dealTime"         column="deal_time"/>
+        <result property="remark"           column="remark"/>
+        <result property="createTime"       column="create_time"/>
+        <result property="updateTime"       column="update_time"/>
+        <result property="floorPlanUrl"     column="floor_plan_url"/>
+    </resultMap>
+
+    <sql id="cols">id, tenant_id, community_id, building, room_no, floor, total_floor, area, layout,
+        status, listing_price, first_listing_time, deal_price, record_price, deal_time, remark, create_time, update_time</sql>
+
+    <select id="getById" resultMap="propertyMap">
+        SELECT <include refid="cols"/>
+        FROM   properties
+        WHERE  id        = #{id}
+        AND    tenant_id = #{tenantId}
+    </select>
+
+    <!--
+        复合条件列表查询，按 status 过滤：
+        - status=LIST：挂牌 tab，显示 listing_price / first_listing_time
+        - status=SOLD：成交 tab，显示 deal_price / deal_time（listing_price 作为快照）
+        - status 为空：默认展示 LIST 与 SOLD
+        communityId / rooms 两个筛选条件共用
+    -->
+    <select id="listByConditions" resultMap="propertyMap">
+        SELECT p.id, p.tenant_id, p.community_id, p.building, p.room_no, p.floor, p.total_floor,
+               p.area, p.layout, p.status, p.listing_price, p.first_listing_time,
+               p.deal_price, p.record_price, p.deal_time, p.remark, p.create_time, p.update_time,
+               (SELECT pi.image_url FROM property_images pi
+                WHERE pi.property_id = p.id AND pi.tenant_id = p.tenant_id AND pi.image_type = 'F'
+                ORDER BY pi.sort_order LIMIT 1) AS floor_plan_url
+        FROM   properties p
+        <where>
+            p.tenant_id = #{tenantId}
+            <if test="status != null and status != ''">
+                AND p.status = #{status}
+            </if>
+            <if test="communityId != null and communityId != ''">
+                AND p.community_id = #{communityId}
+            </if>
+            <if test="rooms != null and rooms != ''">
+                AND p.layout LIKE CONCAT(#{rooms}, '室%')
+            </if>
+        </where>
+        ORDER BY
+        <choose>
+            <when test="status == 'SOLD'">
+                deal_time DESC
+            </when>
+            <when test="status == 'LIST'">
+                first_listing_time DESC
+            </when>
+            <when test="status == 'VACANT'">
+                create_time DESC
+            </when>
+            <otherwise>
+                create_time DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <insert id="insertSelective" parameterType="com.hz.dream.po.Property">
+        INSERT INTO properties
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="tenantId != null">tenant_id,</if>
+            <if test="communityId != null">community_id,</if>
+            <if test="building != null">building,</if>
+            <if test="roomNo != null">room_no,</if>
+            <if test="floor != null">floor,</if>
+            <if test="totalFloor != null">total_floor,</if>
+            <if test="area != null">area,</if>
+            <if test="layout != null">layout,</if>
+            <if test="status != null">status,</if>
+            <if test="listingPrice != null">listing_price,</if>
+            <if test="firstListingTime != null">first_listing_time,</if>
+            <if test="dealPrice != null">deal_price,</if>
+            <if test="recordPrice != null">record_price,</if>
+            <if test="dealTime != null">deal_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="tenantId != null">#{tenantId},</if>
+            <if test="communityId != null">#{communityId},</if>
+            <if test="building != null">#{building},</if>
+            <if test="roomNo != null">#{roomNo},</if>
+            <if test="floor != null">#{floor},</if>
+            <if test="totalFloor != null">#{totalFloor},</if>
+            <if test="area != null">#{area},</if>
+            <if test="layout != null">#{layout},</if>
+            <if test="status != null">#{status},</if>
+            <if test="listingPrice != null">#{listingPrice},</if>
+            <if test="firstListingTime != null">#{firstListingTime},</if>
+            <if test="dealPrice != null">#{dealPrice},</if>
+            <if test="recordPrice != null">#{recordPrice},</if>
+            <if test="dealTime != null">#{dealTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateSelectiveById" parameterType="com.hz.dream.po.Property">
+        UPDATE properties
+        <set>
+            <if test="communityId != null">community_id = #{communityId},</if>
+            <if test="building != null">building = #{building},</if>
+            <if test="roomNo != null">room_no = #{roomNo},</if>
+            <if test="floor != null">floor = #{floor},</if>
+            <if test="totalFloor != null">total_floor = #{totalFloor},</if>
+            <if test="area != null">area = #{area},</if>
+            <if test="layout != null">layout = #{layout},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="listingPrice != null">listing_price = #{listingPrice},</if>
+            <if test="firstListingTime != null">first_listing_time = #{firstListingTime},</if>
+            <if test="dealPrice != null">deal_price = #{dealPrice},</if>
+            <if test="recordPrice != null">record_price = #{recordPrice},</if>
+            <if test="dealTime != null">deal_time = #{dealTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        WHERE id        = #{id}
+        AND   tenant_id = #{tenantId}
+    </update>
+
+    <!--
+        显式更新挂牌相关字段，允许置空（用于记录全删后回 VACANT）。
+        status 为 null 时保持原值（仅记录增删改时调用方传具体状态）。
+    -->
+    <update id="updateListingFields">
+        UPDATE properties
+        SET
+            status              = #{status},
+            listing_price       = #{listingPrice},
+            first_listing_time  = #{firstListingTime}
+        WHERE id        = #{id}
+        AND   tenant_id = #{tenantId}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM properties WHERE id = #{id} AND tenant_id = #{tenantId}
+    </delete>
+
+</mapper>

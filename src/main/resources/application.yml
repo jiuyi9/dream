@@ -1,18 +1,19 @@
 server:
   port: 8080
-  servlet:
-    context-path: /api
 
 spring:
   application:
     name: hz-dream
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
   datasource:
-    url: jdbc:h2:mem:dream;DB_CLOSE_DELAY=-1;MODE=MySQL
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-    schema: classpath:schema.sql
-    data: classpath:data.sql
+    url: jdbc:mysql://10.19.214.253:3306/property?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: Hik12345+
+    schema: classpath:sql/table.sql
     initialization-mode: always
 
 mybatis:
@@ -22,6 +23,10 @@ mybatis:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
+app:
+  upload-dir: ./uploads          #
+  upload-url-prefix: /uploads    # 访问前缀
 logging:
   level:
     com.hz.dream: debug
+

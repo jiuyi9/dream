@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房产详情 - 房产交易</title>
+    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/mobile.css">
+    <style>
+        .listing-form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+        .listing-form-row .form-field { flex: 1; min-width: 180px; }
+    </style>
+</head>
+<body>
+<header class="app-header">
+    <button class="back-btn" id="backBtn" aria-label="返回">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <h1>房产详情</h1>
+    <nav class="app-nav">
+        <div class="nav-group">
+            <a href="/pages/listings.html">挂牌</a>
+            <a href="/pages/deals.html">成交</a>
+            <a href="/pages/properties.html">基础信息</a>
+        </div>
+    </nav>
+</header>
+
+<main class="app-main app-main-detail">
+    <h2 class="page-title">房产详情</h2>
+
+    <div class="detail-grid">
+        <div class="card detail-images">
+            <div class="image-dual">
+                <div class="image-section">
+                    <div class="card-title">房屋图片</div>
+                    <div class="image-grid" id="houseImages"></div>
+                </div>
+                <div class="image-section">
+                    <div class="card-title">户型图</div>
+                    <div class="image-grid" id="floorPlanImages"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card detail-basic" id="basicCard">
+            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>基本信息</span>
+                <button class="btn btn-primary" id="dealBtn" style="display: none;">成交</button>
+            </div>
+            <div id="basicInfo"></div>
+        </div>
+
+        <div class="card detail-listings">
+            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>挂牌记录</span>
+                <button class="btn btn-primary" id="addListingBtn" style="display: none;">+ 新增挂牌/调价</button>
+            </div>
+            <table class="table has-card-view">
+                <thead>
+                    <tr>
+                        <th>挂牌价格</th>
+                        <th>挂牌时间</th>
+                        <th>备注</th>
+                        <th style="width: 160px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="listingTbody"></tbody>
+            </table>
+            <div class="card-list" id="listingCardList"></div>
+        </div>
+
+        <div class="card detail-deals">
+            <div class="card-title">成交记录</div>
+            <table class="table has-card-view">
+                <thead>
+                    <tr>
+                        <th>成交价格</th>
+                        <th>网签备案价</th>
+                        <th>单价(按成交价)</th>
+                        <th>单价(按备案价)</th>
+                        <th>挂牌价</th>
+                        <th>砍价(按成交价)</th>
+                        <th>砍价(按备案价)</th>
+                        <th>成交时间</th>
+                    </tr>
+                </thead>
+                <tbody id="dealTbody"></tbody>
+            </table>
+            <div class="card-list" id="dealCardList"></div>
+        </div>
+    </div>
+</main>
+
+<!-- 挂牌/调价弹窗 -->
+<div class="modal-mask" id="listingModalMask" style="display: none;">
+    <div class="modal" style="width: 560px;">
+        <div class="modal-header">
+            <h3 id="listingModalTitle">新增挂牌</h3>
+            <button class="modal-close" id="listingModalCloseBtn">×</button>
+        </div>
+        <form id="listingForm">
+            <div class="modal-body">
+                <input type="hidden" name="id">
+                <div class="listing-form-row">
+                    <div class="form-field">
+                        <label>挂牌价格（万）*</label>
+                        <input type="number" name="listingPrice" required min="0" step="0.01">
+                    </div>
+                    <div class="form-field">
+                        <label>挂牌时间 *</label>
+                        <input type="datetime-local" name="listingTime" required>
+                    </div>
+                </div>
+                <div class="form-field" style="margin-top: 12px;">
+                    <label>备注</label>
+                    <textarea name="remark" rows="3" maxlength="2000" placeholder="本次挂牌/调价说明"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" id="listingCancelBtn">取消</button>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 成交弹窗 -->
+<div class="modal-mask" id="dealModalMask" style="display: none;">
+    <div class="modal" style="width: 480px;">
+        <div class="modal-header">
+            <h3>确认成交</h3>
+            <button class="modal-close" id="dealModalCloseBtn">×</button>
+        </div>
+        <form id="dealForm">
+            <div class="modal-body">
+                <div class="form-field">
+                    <label>当前挂牌价</label>
+                    <input type="text" id="dealCurrentPrice" disabled>
+                </div>
+                <div class="form-field" style="margin-top: 12px;">
+                    <label>成交价格（万）*</label>
+                    <input type="number" name="dealPrice" required min="0" step="0.01">
+                </div>
+                <div class="form-field" style="margin-top: 12px;">
+                    <label>网签备案价（万）</label>
+                    <input type="number" name="recordPrice" min="0" step="0.01" placeholder="选填">
+                </div>
+                <div class="form-field" style="margin-top: 12px;">
+                    <label>成交时间 *</label>
+                    <input type="datetime-local" name="dealTime" required>
+                </div>
+                <div class="form-field" style="margin-top: 12px;">
+                    <label>备注</label>
+                    <textarea name="remark" rows="3" maxlength="2000" placeholder="成交说明"></textarea>
+                </div>
+                <p style="color: var(--ink-muted); font-size: 12px; margin-top: 12px;">
+                    成交后房产状态变为「已成交」，不可再挂牌或调价。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" id="dealCancelBtn">取消</button>
+                <button type="submit" class="btn btn-primary">确认成交</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+    const params = new URLSearchParams(location.search);
+    const propertyId = params.get('id');
+    if (!propertyId) {
+        utils.toast('缺少房产ID', 'error');
+    }
+
+    // 当前房产状态，控制按钮显示
+    let currentStatus = null;
+    let currentListingPrice = null;
+    let currentProperty = null;
+
+    const listingModalMask = document.getElementById('listingModalMask');
+    const listingForm = document.getElementById('listingForm');
+    const listingModalTitle = document.getElementById('listingModalTitle');
+    const dealModalMask = document.getElementById('dealModalMask');
+    const dealForm = document.getElementById('dealForm');
+
+    async function load() {
+        if (!propertyId) return;
+        try {
+            const [property, listings] = await Promise.all([
+                api.getProperty(propertyId),
+                api.listListings(propertyId),
+            ]);
+            currentStatus = property ? property.status : null;
+            currentListingPrice = property ? property.listingPrice : null;
+            currentProperty = property;
+            renderBasic(property);
+            renderImages(property.images);
+            renderListings(listings);
+            renderDeal(property);
+            // 按状态控制「新增挂牌/调价」按钮
+            const addBtn = document.getElementById('addListingBtn');
+            addBtn.style.display = (currentStatus === 'VACANT' || currentStatus === 'LIST') ? '' : 'none';
+            // 「成交」按钮：LIST 显示「成交」，SOLD 显示「修改成交」
+            const dealBtn = document.getElementById('dealBtn');
+            if (currentStatus === 'LIST') {
+                dealBtn.style.display = '';
+                dealBtn.textContent = '成交';
+            } else if (currentStatus === 'SOLD') {
+                dealBtn.style.display = '';
+                dealBtn.textContent = '修改成交';
+            } else {
+                dealBtn.style.display = 'none';
+            }
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    }
+
+    function renderBasic(p) {
+        if (!p) {
+            document.getElementById('basicInfo').innerHTML = '<div class="empty">房产不存在</div>';
+            return;
+        }
+        const statusTag = p.status === 'SOLD'
+            ? '<span class="tag tag-good">成交</span>'
+            : (p.status === 'LIST' ? '<span class="tag tag-warning">挂牌</span>' : '<span class="tag">空置</span>');
+        document.getElementById('basicInfo').innerHTML = `
+            <table class="table">
+                <tr><th>栋号</th><td>${p.building}</td><th>门牌号</th><td>${p.roomNo || '-'}</td></tr>
+                <tr><th>户型</th><td>${p.layout || '-'}</td><th>面积</th><td>${p.area != null ? Number(p.area).toFixed(2) + ' ㎡' : '-'}</td></tr>
+                <tr><th>楼层</th><td>${p.floor} / ${p.totalFloor}</td><th>状态</th><td>${statusTag}</td></tr>
+                <tr><th>备注</th><td colspan="3">${p.remark || '-'}</td></tr>
+            </table>
+        `;
+    }
+
+    function renderImages(images) {
+        const house = document.getElementById('houseImages');
+        const plan = document.getElementById('floorPlanImages');
+        const houseList = (images || []).filter(i => i.imageType === 'H');
+        const planList = (images || []).filter(i => i.imageType === 'F');
+        renderCarousel(house, houseList, '房屋图');
+        renderCarousel(plan, planList, '户型图');
+    }
+
+    function renderCarousel(container, list, alt) {
+        if (!list.length) {
+            container.innerHTML = '<div class="empty">暂无图片</div>';
+            return;
+        }
+        const urls = list.map(i => utils.imageUrl(i.imageUrl));
+        container.classList.add('image-carousel');
+        container.dataset.index = '0';
+        container.innerHTML = `
+            <div class="carousel-stage">
+                <button class="carousel-nav prev" type="button" aria-label="上一张">‹</button>
+                <img class="carousel-main" src="${urls[0]}" alt="${alt}">
+                <button class="carousel-nav next" type="button" aria-label="下一张">›</button>
+                <span class="carousel-counter">1 / ${urls.length}</span>
+            </div>
+            ${urls.length > 1 ? `
+            <div class="carousel-thumbs">
+                ${urls.map((u, i) => `<img class="thumb${i === 0 ? ' active' : ''}" src="${u}" alt="${alt}缩略图" data-idx="${i}">`).join('')}
+            </div>` : ''}
+        `;
+        const main = container.querySelector('.carousel-main');
+        const counter = container.querySelector('.carousel-counter');
+        const thumbs = container.querySelectorAll('.thumb');
+        const show = (idx) => {
+            const n = (idx + urls.length) % urls.length;
+            container.dataset.index = String(n);
+            main.src = urls[n];
+            if (counter) counter.textContent = `${n + 1} / ${urls.length}`;
+            thumbs.forEach(t => t.classList.toggle('active', Number(t.dataset.idx) === n));
+        };
+        container.querySelector('.prev').addEventListener('click', () => show(Number(container.dataset.index) - 1));
+        container.querySelector('.next').addEventListener('click', () => show(Number(container.dataset.index) + 1));
+        thumbs.forEach(t => t.addEventListener('click', () => show(Number(t.dataset.idx))));
+        // 主图点击放大
+        main.addEventListener('click', () => openImageLightbox(urls, Number(container.dataset.index)));
+    }
+
+    // 图片放大预览（简易 lightbox）
+    function openImageLightbox(urls, idx) {
+        const mask = document.createElement('div');
+        mask.className = 'lightbox-mask';
+        let current = idx;
+        const img = document.createElement('img');
+        img.className = 'lightbox-img';
+        img.src = urls[current];
+        const counter = document.createElement('span');
+        counter.className = 'lightbox-counter';
+        counter.textContent = `${current + 1} / ${urls.length}`;
+        const prev = document.createElement('button');
+        prev.className = 'lightbox-nav prev';
+        prev.textContent = '‹';
+        const next = document.createElement('button');
+        next.className = 'lightbox-nav next';
+        next.textContent = '›';
+        const close = document.createElement('button');
+        close.className = 'lightbox-close';
+        close.textContent = '×';
+        mask.append(img, counter, prev, next, close);
+        document.body.appendChild(mask);
+        const render = () => {
+            img.src = urls[current];
+            counter.textContent = `${current + 1} / ${urls.length}`;
+        };
+        prev.addEventListener('click', (e) => { e.stopPropagation(); current = (current - 1 + urls.length) % urls.length; render(); });
+        next.addEventListener('click', (e) => { e.stopPropagation(); current = (current + 1) % urls.length; render(); });
+        close.addEventListener('click', () => mask.remove());
+        mask.addEventListener('click', (e) => { if (e.target === mask) mask.remove(); });
+        document.addEventListener('keydown', function esc(e) {
+            if (e.key === 'Escape') { mask.remove(); document.removeEventListener('keydown', esc); }
+            if (e.key === 'ArrowLeft') { current = (current - 1 + urls.length) % urls.length; render(); }
+            if (e.key === 'ArrowRight') { current = (current + 1) % urls.length; render(); }
+        });
+    }
+
+    function renderListings(list) {
+        const tbody = document.getElementById('listingTbody');
+        const cardList = document.getElementById('listingCardList');
+        const canEdit = currentStatus === 'VACANT' || currentStatus === 'LIST';
+        if (!list || !list.length) {
+            tbody.innerHTML = `<tr><td colspan="4" class="empty">暂无挂牌记录</td></tr>`;
+            cardList.innerHTML = `<div class="empty">暂无挂牌记录</div>`;
+            return;
+        }
+        tbody.innerHTML = list.map(l => `
+            <tr>
+                <td data-label="挂牌价格">${utils.formatPrice(l.listingPrice)}</td>
+                <td data-label="挂牌时间">${utils.formatDate(l.listingTime)}</td>
+                <td data-label="备注">${l.remark || '-'}</td>
+                <td class="row-actions" data-label="操作">
+                    ${canEdit ? `<button onclick="showEditListing('${l.id}')">编辑</button>
+                    <button class="btn-delete" onclick="removeListing('${l.id}')">删除</button>` : '-'}
+                </td>
+            </tr>
+        `).join('');
+        cardList.innerHTML = list.map(l => `
+            <div class="list-card record-inline">
+                <div class="record-main">
+                    <span class="price">${utils.formatPrice(l.listingPrice)}</span>
+                    <span class="record-time">${utils.formatDate(l.listingTime).substring(0, 10)}</span>
+                    <span class="record-remark">${l.remark || '-'}</span>
+                </div>
+                ${canEdit ? `<div class="record-actions">
+                    <button onclick="showEditListing('${l.id}')">编辑</button>
+                    <button class="btn-delete" onclick="removeListing('${l.id}')">删除</button>
+                </div>` : ''}
+            </div>
+        `).join('');
+    }
+
+    function renderDeal(p) {
+        const tbody = document.getElementById('dealTbody');
+        const cardList = document.getElementById('dealCardList');
+        if (!p || p.dealPrice == null) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty">暂无成交记录</td></tr>';
+            cardList.innerHTML = '<div class="empty">暂无成交记录</div>';
+            return;
+        }
+        const cutDeal = utils.cutTag(p.listingPrice, p.dealPrice);
+        const cutRecord = utils.cutTag(p.listingPrice, p.recordPrice);
+        tbody.innerHTML = `
+            <tr>
+                <td data-label="成交价格">${utils.formatPrice(p.dealPrice)}</td>
+                <td data-label="网签备案价">${p.recordPrice != null ? utils.formatPrice(p.recordPrice) : '-'}</td>
+                <td data-label="单价(按成交价)">${utils.formatUnitPrice(p.dealPrice, p.area)}</td>
+                <td data-label="单价(按备案价)">${utils.formatUnitPrice(p.recordPrice, p.area)}</td>
+                <td data-label="挂牌价">${p.listingPrice != null ? utils.formatPrice(p.listingPrice) : '-'}</td>
+                <td data-label="砍价(按成交价)">${cutDeal}</td>
+                <td data-label="砍价(按备案价)">${cutRecord}</td>
+                <td data-label="成交时间">${utils.formatDate(p.dealTime)}</td>
+            </tr>
+        `;
+        cardList.innerHTML = `
+            <div class="list-card deal-record-compact">
+                <div class="record-time-row">
+                    <span class="label">成交时间</span>
+                    <span class="value">${utils.formatDate(p.dealTime).substring(0, 10)}</span>
+                    <span class="tag tag-good">已成交</span>
+                </div>
+                <div class="record-line">
+                    <span class="row-label">备案</span>
+                    <span>${p.recordPrice != null ? utils.formatPrice(p.recordPrice) : '-'}</span>
+                    <span>${utils.formatUnitPrice(p.recordPrice, p.area)}</span>
+                    <span>${cutRecord}</span>
+                </div>
+                <div class="record-line">
+                    <span class="row-label">中介</span>
+                    <span>${utils.formatPrice(p.dealPrice)}</span>
+                    <span>${utils.formatUnitPrice(p.dealPrice, p.area)}</span>
+                    <span>${cutDeal}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // ============ 挂牌/调价弹窗 ============
+
+    function openListingModal() {
+        listingModalMask.style.display = '';
+    }
+
+    function closeListingModal() {
+        listingModalMask.style.display = 'none';
+        listingForm.reset();
+        listingForm.id.value = '';
+    }
+
+    function showAddListing() {
+        if (currentStatus === 'SOLD') {
+            utils.toast('已成交，不能再挂牌', 'error');
+            return;
+        }
+        listingModalTitle.textContent = currentStatus === 'VACANT' ? '首次挂牌' : '新增调价';
+        listingForm.reset();
+        listingForm.id.value = '';
+        // 默认时间为当前
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const local = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        listingForm.listingTime.value = local;
+        openListingModal();
+    }
+
+    async function showEditListing(id) {
+        try {
+            const list = await api.listListings(propertyId);
+            const l = list.find(x => x.id === id);
+            if (!l) {
+                utils.toast('记录不存在', 'error');
+                return;
+            }
+            listingModalTitle.textContent = '编辑挂牌记录';
+            listingForm.id.value = l.id;
+            listingForm.listingPrice.value = utils.yuanToWan(l.listingPrice);
+            // 后端返回 ISO 时间，转成 datetime-local 格式
+            const d = new Date(l.listingTime);
+            const pad = n => String(n).padStart(2, '0');
+            listingForm.listingTime.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            listingForm.remark.value = l.remark || '';
+            openListingModal();
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    }
+
+    async function removeListing(id) {
+        if (!await utils.confirm('确认删除该挂牌记录？删除不影响房产主体状态。')) return;
+        try {
+            await api.deleteListing(propertyId, id);
+            utils.toast('删除成功');
+            load();
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    }
+
+    listingForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = listingForm.id.value;
+        const price = utils.wanToYuan(listingForm.listingPrice.value);
+        if (price == null) {
+            utils.toast('请填写有效的挂牌价格', 'error');
+            return;
+        }
+        const timeValue = listingForm.listingTime.value;
+        if (!timeValue) {
+            utils.toast('请填写挂牌时间', 'error');
+            return;
+        }
+        const data = {
+            listingPrice: price,
+            listingTime: utils.toBackendDateTime(timeValue),
+            remark: listingForm.remark.value.trim() || null,
+        };
+        try {
+            if (id) {
+                await api.updateListing(propertyId, id, data);
+                utils.toast('修改成功');
+            } else {
+                await api.createListing(propertyId, data);
+                utils.toast(currentStatus === 'VACANT' ? '挂牌成功' : '调价成功');
+            }
+            closeListingModal();
+            load();
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    });
+
+    document.getElementById('addListingBtn').addEventListener('click', showAddListing);
+    document.getElementById('listingModalCloseBtn').addEventListener('click', closeListingModal);
+    document.getElementById('listingCancelBtn').addEventListener('click', closeListingModal);
+    listingModalMask.addEventListener('click', (e) => { if (e.target === listingModalMask) closeListingModal(); });
+
+    // ============ 成交弹窗 ============
+
+    function openDealModal() {
+        dealModalMask.style.display = '';
+    }
+
+    function closeDealModal() {
+        dealModalMask.style.display = 'none';
+        dealForm.reset();
+    }
+
+    function showDeal() {
+        if (currentStatus !== 'LIST' && currentStatus !== 'SOLD') {
+            utils.toast('当前状态不可成交', 'error');
+            return;
+        }
+        dealForm.reset();
+        // 当前挂牌价回显（只读，按万显示）
+        document.getElementById('dealCurrentPrice').value = currentListingPrice != null
+            ? utils.formatPrice(currentListingPrice)
+            : '-';
+        // 默认成交时间为当前
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const localNow = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        if (currentStatus === 'LIST') {
+            // 新增成交：默认成交价=挂牌价，时间=当前
+            if (currentListingPrice != null) {
+                dealForm.dealPrice.value = utils.yuanToWan(currentListingPrice);
+            }
+            dealForm.dealTime.value = localNow;
+            dealForm.recordPrice.value = '';
+        } else {
+            // 修改成交：回填已有成交信息
+            dealForm.dealPrice.value = utils.yuanToWan(currentProperty.dealPrice);
+            dealForm.recordPrice.value = currentProperty.recordPrice != null ? utils.yuanToWan(currentProperty.recordPrice) : '';
+            if (currentProperty.dealTime) {
+                const d = new Date(currentProperty.dealTime);
+                dealForm.dealTime.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            } else {
+                dealForm.dealTime.value = localNow;
+            }
+            dealForm.remark.value = currentProperty.remark || '';
+        }
+        openDealModal();
+    }
+
+    dealForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const dealPrice = utils.wanToYuan(dealForm.dealPrice.value);
+        if (dealPrice == null) {
+            utils.toast('请填写有效的成交价格', 'error');
+            return;
+        }
+        const recordPrice = utils.wanToYuan(dealForm.recordPrice.value);
+        const timeValue = dealForm.dealTime.value;
+        if (!timeValue) {
+            utils.toast('请填写成交时间', 'error');
+            return;
+        }
+        const dealTime = utils.toBackendDateTime(timeValue);
+        const remark = dealForm.remark.value.trim() || null;
+        try {
+            if (currentStatus === 'LIST') {
+                await api.createDeal(propertyId, dealPrice, recordPrice, dealTime, remark);
+                utils.toast('成交成功');
+            } else {
+                await api.updateDeal(propertyId, dealPrice, recordPrice, dealTime, remark);
+                utils.toast('修改成功');
+            }
+            closeDealModal();
+            load();
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    });
+
+    document.getElementById('dealBtn').addEventListener('click', showDeal);
+    document.getElementById('dealModalCloseBtn').addEventListener('click', closeDealModal);
+    document.getElementById('dealCancelBtn').addEventListener('click', closeDealModal);
+    dealModalMask.addEventListener('click', (e) => { if (e.target === dealModalMask) closeDealModal(); });
+
+    // 返回上一页：有历史则回退，否则跳挂牌页
+    document.getElementById('backBtn').addEventListener('click', () => {
+        if (history.length > 1) history.back();
+        else location.href = '/pages/listings.html';
+    });
+
+    load();
+</script>
+</body>
+</html>

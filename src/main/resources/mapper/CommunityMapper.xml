@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hz.dream.dao.CommunityMapper">
+
+    <resultMap id="communityMap" type="com.hz.dream.po.Community">
+        <id     property="id"            column="id"/>
+        <result property="tenantId"      column="tenant_id"/>
+        <result property="communityName" column="community_name"/>
+        <result property="city"          column="city"/>
+        <result property="district"      column="district"/>
+        <result property="address"       column="address"/>
+        <result property="developer"     column="developer"/>
+        <result property="createTime"   column="create_time"/>
+        <result property="updateTime"   column="update_time"/>
+    </resultMap>
+
+    <sql id="cols">id, tenant_id, community_name, city, district, address, developer, create_time, update_time</sql>
+
+    <select id="getById" resultMap="communityMap">
+        SELECT <include refid="cols"/>
+        FROM   communities
+        WHERE  id        = #{id}
+        AND    tenant_id = #{tenantId}
+    </select>
+
+    <select id="getByName" resultMap="communityMap">
+        SELECT <include refid="cols"/>
+        FROM   communities
+        WHERE  community_name = #{name}
+        AND    tenant_id      = #{tenantId}
+    </select>
+
+    <select id="listByTenant" resultMap="communityMap">
+        SELECT <include refid="cols"/>
+        FROM   communities
+        WHERE  tenant_id = #{tenantId}
+        ORDER  BY create_time
+    </select>
+
+    <select id="listByCity" resultMap="communityMap">
+        SELECT <include refid="cols"/>
+        FROM   communities
+        WHERE  city      = #{city}
+        AND    tenant_id = #{tenantId}
+        ORDER  BY create_time
+    </select>
+
+    <insert id="insertSelective" parameterType="com.hz.dream.po.Community">
+        INSERT INTO communities
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="tenantId != null">tenant_id,</if>
+            <if test="communityName != null">community_name,</if>
+            <if test="city != null">city,</if>
+            <if test="district != null">district,</if>
+            <if test="address != null">address,</if>
+            <if test="developer != null">developer,</if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="tenantId != null">#{tenantId},</if>
+            <if test="communityName != null">#{communityName},</if>
+            <if test="city != null">#{city},</if>
+            <if test="district != null">#{district},</if>
+            <if test="address != null">#{address},</if>
+            <if test="developer != null">#{developer},</if>
+        </trim>
+    </insert>
+
+    <update id="updateSelectiveById" parameterType="com.hz.dream.po.Community">
+        UPDATE communities
+        <set>
+            <if test="communityName != null">community_name = #{communityName},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="district != null">district = #{district},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="developer != null">developer = #{developer},</if>
+        </set>
+        WHERE id        = #{id}
+        AND   tenant_id = #{tenantId}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM communities WHERE id = #{id} AND tenant_id = #{tenantId}
+    </delete>
+
+</mapper>

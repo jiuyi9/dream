@@ -1,0 +1,929 @@
+/*
+ * mobile.css — App 风格移动端样式
+ * 激活条件：视口宽度 ≤ 768px（手机/窄屏）
+ * 桌面端（>768px）完全不受影响
+ *
+ * 设计目标：
+ * - 底部 Tab 导航（SVG 图标），替代顶部导航
+ * - 列表卡片化：每条记录一张独立卡片，信息纵向排列
+ * - 弹窗全屏化（确认弹窗保留居中），表单字段纵向堆叠
+ * - 触控目标 ≥ 44px，输入框/按钮放大
+ * - 详情页信息卡片化，操作按钮吸底
+ */
+
+@media (max-width: 768px) {
+
+    /* ============ 基础 ============ */
+
+    html, body {
+        font-size: 15px;
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        padding-bottom: calc(56px + env(safe-area-inset-bottom));
+    }
+
+    /* ============ 顶部 Header：精简，只留标题 ============ */
+
+    .app-header {
+        padding: 10px 16px;
+        gap: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: var(--surface-card);
+        border-bottom: 1px solid var(--border);
+        align-items: center;
+    }
+
+    .app-header h1 {
+        font-size: 17px;
+        font-weight: 600;
+        flex: 1;
+    }
+
+    /* 返回按钮：移动端扁平无框 */
+    .back-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+    }
+
+    .back-btn:active {
+        opacity: 0.6;
+    }
+
+    /* 隐藏顶部导航 + 子 Tab 栏，改用底部 Tab */
+    .app-nav,
+    .app-nav .nav-group,
+    .tab-bar {
+        display: none !important;
+    }
+
+    /* ============ 底部 Tab 导航 ============ */
+
+    .mobile-tabbar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--surface-card);
+        border-top: 1px solid var(--border);
+        padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+        z-index: 100;
+        display: flex;
+        justify-content: space-around;
+        box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .mobile-tabbar a {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        padding: 6px 0;
+        color: var(--ink-muted);
+        text-decoration: none;
+        font-size: 11px;
+        line-height: 1.2;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-tabbar a .tab-icon {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: inherit;
+    }
+
+    .mobile-tabbar a .tab-icon svg {
+        width: 22px;
+        height: 22px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+    }
+
+    .mobile-tabbar a.active {
+        color: var(--accent);
+    }
+
+    .mobile-tabbar a:active {
+        background: var(--surface-hover);
+    }
+
+    /* ============ 主内容区 ============ */
+
+    .app-main {
+        max-width: 100%;
+        padding: 8px 10px 16px;
+    }
+
+    .page-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    /* ============ 卡片：紧凑 ============ */
+
+    .card {
+        padding: 10px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+    }
+
+    .card-title {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    /* ============ 筛选栏：纵向堆叠 ============ */
+
+    /* 筛选栏：紧凑布局，select 一行、按钮一行 */
+    .filter-bar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    .filter-bar select,
+    .filter-bar input {
+        flex: 1 1 calc(50% - 3px);
+        min-width: 0;
+        width: auto;
+        padding: 8px 10px;
+        font-size: 14px;
+        border-radius: 6px;
+    }
+
+    .filter-bar .btn,
+    .filter-bar .btn-primary {
+        flex: 1 1 calc(50% - 3px);
+        width: auto;
+        padding: 8px 10px;
+        font-size: 14px;
+        min-height: 36px;
+    }
+
+    .filter-bar > span[style*="flex: 1"] {
+        display: none;
+    }
+
+    /* 新增按钮占满一行 */
+    .filter-bar #addBtn {
+        flex: 1 1 100%;
+        order: 99;
+    }
+
+    /* ============ 表格兜底（用于未卡片化的表格，如详情页基本信息） ============ */
+
+    .table {
+        display: block;
+        width: 100%;
+    }
+
+    .table thead {
+        display: none;
+    }
+
+    .table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    .table tbody tr {
+        display: block;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .table tbody tr:hover {
+        background: transparent;
+    }
+
+    .table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 0;
+        border: none;
+        font-size: 14px;
+        gap: 12px;
+    }
+
+    .table td::before {
+        content: attr(data-label);
+        color: var(--ink-muted);
+        font-size: 13px;
+        flex-shrink: 0;
+    }
+
+    .table td.empty {
+        display: block;
+        text-align: center;
+        padding: 24px 0;
+    }
+
+    .table td.empty::before {
+        content: none;
+    }
+
+    /* 详情页基本信息表：th/td 两列结构，纵向排列 */
+    .card .table tbody tr {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .card .table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .card .table th,
+    .card .table td {
+        padding: 8px 0;
+        font-size: 14px;
+    }
+
+    .card .table th {
+        width: 88px;
+        text-align: left;
+        color: var(--ink-muted);
+        font-weight: normal;
+        background: transparent;
+    }
+
+    .card .table td {
+        flex: 1;
+    }
+
+    .card .table td::before {
+        content: none;
+    }
+
+    /* ============ 列表卡片化（核心 App 风格） ============ */
+
+    /* 隐藏原表格，显示卡片列表。JS render 时按窄屏输出 .card-list 结构 */
+    .table.has-card-view {
+        display: none !important;
+    }
+
+    .card-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 6px;
+    }
+
+    /* 紧凑卡片：左户型图 + 右内容 */
+    .list-card.compact {
+        display: flex;
+        gap: 12px;
+        background: var(--surface-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        text-decoration: none;
+        color: inherit;
+        align-items: stretch;
+    }
+
+    .list-card.compact:active {
+        border-color: var(--accent);
+    }
+
+    .list-card.compact .card-thumb {
+        width: 88px;
+        height: 88px;
+        border-radius: 6px;
+        object-fit: cover;
+        flex-shrink: 0;
+        background: var(--surface-sunken);
+    }
+
+    .list-card.compact .card-thumb.placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: var(--ink-muted);
+    }
+
+    .list-card.compact .card-content {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        justify-content: center;
+    }
+
+    .list-card.compact .card-title-row {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink-primary);
+        line-height: 1.4;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .list-card.compact .card-title-row .title-text {
+        flex: 1;
+        min-width: 0;
+        word-break: break-word;
+    }
+
+    .list-card.compact .card-title-row .title-time {
+        font-size: 12px;
+        font-weight: normal;
+        color: var(--ink-muted);
+        flex-shrink: 0;
+    }
+
+    .list-card.compact .card-meta-row {
+        font-size: 13px;
+        color: var(--ink-secondary);
+        line-height: 1.4;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .list-card.compact .card-meta-row span + span::before {
+        content: '|';
+        color: var(--border-strong);
+        margin-right: 8px;
+    }
+
+    .list-card.compact .card-price-row {
+        font-size: 13px;
+        color: var(--ink-secondary);
+        line-height: 1.4;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .list-card.compact .card-price-row span + span::before {
+        content: '|';
+        color: var(--border-strong);
+        margin-right: 8px;
+    }
+
+    .list-card.compact .card-price-row .price {
+        color: var(--status-serious);
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    .list-card.compact .card-cut-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        line-height: 1.4;
+    }
+
+    .list-card.compact .card-time-row {
+        font-size: 12px;
+        color: var(--ink-muted);
+        line-height: 1.4;
+    }
+
+    /* 成交卡片：备案价为主体（突出），中介价为次要（弱化） */
+    .deal-card .card-main-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 8px;
+        background: var(--accent-bg);
+        border-radius: 6px;
+        font-size: 13px;
+        line-height: 1.4;
+        flex-wrap: wrap;
+    }
+
+    .deal-card .card-main-row .row-label {
+        font-size: 11px;
+        color: var(--accent);
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .deal-card .card-main-row .price {
+        color: var(--status-serious);
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    .deal-card .card-sub-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px 8px;
+        font-size: 12px;
+        color: var(--ink-muted);
+        line-height: 1.4;
+        flex-wrap: wrap;
+    }
+
+    .deal-card .card-sub-row .row-label {
+        font-size: 10px;
+        flex-shrink: 0;
+    }
+
+    .deal-card .card-sub-row .price,
+    .deal-card .card-sub-row span {
+        color: var(--ink-muted);
+        font-weight: normal;
+    }
+
+    .deal-card .card-sub-row .tag {
+        font-size: 11px;
+        padding: 1px 4px;
+    }
+
+    /* 兼容旧卡片样式（详情页挂牌/成交记录） */
+    .card-list .list-card {
+        background: var(--surface-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px;
+        transition: border-color 0.15s;
+    }
+
+    .card-list .list-card:active {
+        border-color: var(--accent);
+    }
+
+    /* 详情页：挂牌记录一行式 */
+    .list-card.record-inline {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+    }
+
+    .list-card.record-inline .record-main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .list-card.record-inline .record-main .price {
+        color: var(--status-serious);
+        font-weight: 600;
+        font-size: 15px;
+        flex-shrink: 0;
+    }
+
+    .list-card.record-inline .record-main .record-time {
+        font-size: 12px;
+        color: var(--ink-muted);
+        flex-shrink: 0;
+    }
+
+    .list-card.record-inline .record-main .record-remark {
+        font-size: 13px;
+        color: var(--ink-secondary);
+        min-width: 0;
+        word-break: break-word;
+    }
+
+    .list-card.record-inline .record-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .list-card.record-inline .record-actions button {
+        padding: 4px 10px;
+        font-size: 12px;
+        border-radius: 6px;
+    }
+
+    /* 详情页：成交记录紧凑式 */
+    .list-card.deal-record-compact {
+        padding: 10px;
+    }
+
+    .list-card.deal-record-compact .record-time-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 6px;
+        margin-bottom: 6px;
+        border-bottom: 1px dashed var(--border);
+        font-size: 13px;
+    }
+
+    .list-card.deal-record-compact .record-time-row .label {
+        color: var(--ink-muted);
+        font-size: 12px;
+    }
+
+    .list-card.deal-record-compact .record-time-row .value {
+        color: var(--ink-primary);
+        font-weight: 600;
+    }
+
+    .list-card.deal-record-compact .record-time-row .tag {
+        margin-left: auto;
+    }
+
+    .list-card.deal-record-compact .record-line {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        padding: 4px 8px;
+        font-size: 13px;
+        color: var(--ink-secondary);
+        line-height: 1.5;
+        flex-wrap: wrap;
+    }
+
+    .list-card.deal-record-compact .record-line + .record-line {
+        margin-top: 2px;
+    }
+
+    .list-card.deal-record-compact .record-line .row-label {
+        font-size: 11px;
+        color: var(--accent);
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .list-card.deal-record-compact .record-line .price {
+        color: var(--status-serious);
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    .list-card .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+
+    .list-card .card-head .title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink-primary);
+        line-height: 1.35;
+        flex: 1;
+        word-break: break-word;
+    }
+
+    .list-card .card-head .status {
+        flex-shrink: 0;
+    }
+
+    .list-card .card-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 10px;
+        font-size: 12px;
+        color: var(--ink-secondary);
+        margin-bottom: 6px;
+    }
+
+    .list-card .card-body .field {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+    }
+
+    .list-card .card-body .field.full {
+        grid-column: 1 / -1;
+    }
+
+    .list-card .card-body .field .label {
+        color: var(--ink-muted);
+        font-size: 11px;
+    }
+
+    .list-card .card-body .field .value {
+        color: var(--ink-primary);
+        font-size: 13px;
+        word-break: break-word;
+    }
+
+    .list-card .card-body .field .price {
+        color: var(--status-serious);
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .list-card .card-actions {
+        display: flex;
+        gap: 6px;
+        padding-top: 6px;
+        border-top: 1px dashed var(--border);
+    }
+
+    .list-card .card-actions a,
+    .list-card .card-actions button {
+        flex: 1;
+        padding: 6px 0;
+        font-size: 13px;
+        background: var(--surface-sunken);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--ink-primary);
+        text-align: center;
+        text-decoration: none;
+        min-height: 32px;
+        line-height: 18px;
+    }
+
+    .list-card .card-actions a:active,
+    .list-card .card-actions button:active {
+        background: var(--surface-hover);
+    }
+
+    .list-card .card-actions .btn-delete {
+        color: var(--status-serious);
+    }
+
+    /* ============ 表单：纵向堆叠 ============ */
+
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .form-field {
+        min-width: 0;
+    }
+
+    .form-field label {
+        font-size: 14px;
+        margin-bottom: 2px;
+    }
+
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+        padding: 10px 12px;
+        font-size: 15px;
+        border-radius: 8px;
+    }
+
+    /* 户型三段下拉在窄屏仍可横向，但缩窄 */
+    .form-field > div[style*="display: flex"] {
+        gap: 6px;
+    }
+
+    /* ============ 按钮：放大触控 ============ */
+
+    .btn {
+        padding: 10px 16px;
+        font-size: 15px;
+        border-radius: 8px;
+        min-height: 40px;
+    }
+
+    .btn-primary {
+        min-height: 44px;
+    }
+
+    /* ============ 弹窗：全屏化 ============ */
+
+    .modal-mask {
+        display: block;
+        align-items: stretch;
+        justify-content: stretch;
+        padding: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        height: auto !important;
+        min-height: 100%;
+        border-radius: 0;
+        box-shadow: none;
+        display: block;
+    }
+
+    .modal > form {
+        display: block;
+        min-height: 100%;
+    }
+
+    .modal-header {
+        padding: 14px 16px;
+        position: sticky;
+        top: 0;
+        background: var(--surface-card);
+        z-index: 2;
+    }
+
+    .modal-header h3 {
+        font-size: 17px;
+    }
+
+    .modal-close {
+        font-size: 24px;
+        padding: 4px 8px;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .modal-footer {
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+        gap: 8px;
+        background: var(--surface-card);
+        border-top: 1px solid var(--border);
+        display: flex;
+        box-sizing: border-box;
+    }
+
+    .modal-footer .btn {
+        flex: 1;
+        min-height: 44px;
+    }
+
+    /* 确认弹窗不全屏，保留居中 */
+    .modal.confirm-modal .modal {
+        width: calc(100% - 32px) !important;
+        max-width: 420px !important;
+        height: auto !important;
+        max-height: 80vh !important;
+        border-radius: 10px;
+        margin: auto;
+    }
+
+    .modal.confirm-modal .modal-body {
+        padding: 20px;
+    }
+
+    /* ============ 图片网格：两列（上传预览兜底） ============ */
+
+    .image-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .image-uploader {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .image-item,
+    .upload-trigger {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4 / 3;
+    }
+
+    /* ============ 详情页紧凑布局：移动端纵向 ============ */
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .detail-basic,
+    .detail-images,
+    .detail-listings,
+    .detail-deals {
+        grid-column: 1;
+        grid-row: auto !important;
+    }
+
+    .detail-grid .card {
+        padding: 8px;
+    }
+
+    /* 移动端图片区主图更扁 */
+    .detail-images .carousel-stage {
+        aspect-ratio: 21 / 10;
+    }
+
+    .detail-images .image-dual {
+        gap: 8px;
+    }
+
+    .detail-images .image-dual .card-title {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .detail-images .carousel-thumbs .thumb {
+        width: 32px;
+        height: 24px;
+    }
+
+    /* 详情页基本信息表格更紧凑 */
+    .detail-basic .table th,
+    .detail-basic .table td {
+        padding: 4px 6px;
+        font-size: 12px;
+    }
+
+    .detail-basic .table th {
+        width: 72px;
+    }
+
+    /* 备注内容自然换行 */
+    .detail-basic .table td,
+    .detail-listings .table td[data-label="备注"] {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    /* ============ 图片轮播：移动端适配 ============ */
+
+    /* 详情页房屋图 + 户型图：移动端纵向堆叠，主图缩小 */
+    .image-dual {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .image-dual .carousel-stage {
+        aspect-ratio: 16 / 10;
+    }
+
+    .carousel-stage {
+        aspect-ratio: 4 / 3;
+    }
+
+    .carousel-nav {
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+    }
+
+    .carousel-nav.prev { left: 6px; }
+    .carousel-nav.next { right: 6px; }
+
+    .carousel-thumbs .thumb {
+        width: 56px;
+        height: 42px;
+    }
+
+    /* lightbox 在移动端：导航按钮更大 */
+    .lightbox-nav {
+        width: 56px;
+        height: 56px;
+        font-size: 32px;
+    }
+    .lightbox-nav.prev { left: 8px; }
+    .lightbox-nav.next { right: 8px; }
+
+    /* ============ Toast：顶部居中 ============ */
+
+    .toast {
+        top: 12px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        max-width: calc(100% - 24px);
+    }
+
+    /* ============ 详情页操作按钮区 ============ */
+
+    .card-title button.btn {
+        padding: 6px 12px;
+        font-size: 13px;
+        min-height: 32px;
+    }
+
+    /* 详情页基本信息卡片的标题行：按钮缩小 */
+    .card-title[style*="display: flex"] {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+} /* @media */

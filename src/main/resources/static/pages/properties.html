@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房源维护 - 房产交易系统</title>
+    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/mobile.css">
+    <style>
+        .image-uploader {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }        .image-item {
+            position: relative;
+            width: 160px;
+            height: 120px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: var(--surface-sunken);
+        }
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .image-item .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 14px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .image-item .uploading {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        .upload-trigger {
+            width: 160px;
+            height: 120px;
+            border: 1px dashed var(--border-strong);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--ink-muted);
+            background: var(--surface-card);
+            font-size: 13px;
+        }
+        .upload-trigger:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .upload-trigger input[type="file"] {
+            display: none;
+        }
+        .upload-section {
+            margin-bottom: 16px;
+        }
+        .upload-section-title {
+            font-size: 13px;
+            color: var(--ink-secondary);
+            margin-bottom: 8px;
+        }
+        @media (max-width: 768px) {
+            #propertyModalFooter {
+                position: fixed;
+                bottom: 60px;
+                left: 0;
+                right: 0;
+                z-index: 90;
+                background: var(--surface-card);
+                padding: 12px 16px;
+                display: flex;
+                gap: 8px;
+                box-sizing: border-box;
+                border-top: 1px solid var(--border);
+                box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+            }
+            .modal-body {
+                padding-bottom: 140px;
+            }
+        }
+    </style>
+</head>
+<body>
+<header class="app-header">
+    <h1>房产交易系统</h1>
+    <nav class="app-nav">
+        <div class="nav-group">
+            <a href="/pages/listings.html">挂牌</a>
+            <a href="/pages/deals.html">成交</a>
+            <a href="/pages/properties.html" class="active">基础信息</a>
+        </div>
+    </nav>
+</header>
+
+<main class="app-main">
+    <div class="tab-bar" id="subTabBar">
+        <a class="tab-btn active" href="/pages/properties.html">房源维护</a>
+        <a class="tab-btn" href="/pages/communities.html">小区信息</a>
+    </div>
+    <h2 class="page-title">房源维护</h2>
+
+    <div class="card">
+        <div class="filter-bar">
+            <select id="statusSelect" style="min-width: 120px;">
+                <option value="">全部状态</option>
+                <option value="VACANT">空置</option>
+                <option value="LIST">挂牌中</option>
+                <option value="SOLD">已成交</option>
+            </select>
+            <select id="communitySelect" style="min-width: 200px;">
+                <option value="">全部小区</option>
+            </select>
+            <select id="roomsSelect" style="min-width: 120px;">
+                <option value="">全部室数</option>
+                <option value="1">1室</option>
+                <option value="2">2室</option>
+                <option value="3">3室</option>
+                <option value="4">4室</option>
+                <option value="5">5室</option>
+                <option value="6">6室</option>
+            </select>
+            <button class="btn btn-primary" id="searchBtn">查询</button>
+            <button class="btn" id="resetBtn">重置</button>
+            <span style="flex: 1;"></span>
+            <button class="btn btn-primary" id="addBtn">+ 新增房源</button>
+        </div>
+        <table class="table has-card-view">
+            <thead id="tableHead"></thead>
+            <tbody id="propertyTbody"></tbody>
+        </table>
+        <div class="card-list" id="propertyCardList"></div>
+    </div>
+</main>
+
+<!-- 新增/编辑弹窗（仅基础信息） -->
+<div class="modal-mask" id="modalMask" style="display: none;">
+    <div class="modal" style="width: 720px;">
+        <div class="modal-header">
+            <h3 id="modalTitle">新增房源</h3>
+            <button class="modal-close" id="modalCloseBtn">×</button>
+        </div>
+        <form id="propertyForm">
+            <div class="modal-body">
+                <input type="hidden" name="id">
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>所属小区 *</label>
+                        <select name="communityId" required></select>
+                    </div>
+                    <div class="form-field">
+                        <label>栋号 *</label>
+                        <input type="text" name="building" required maxlength="50">
+                    </div>
+                    <div class="form-field">
+                        <label>门牌号</label>
+                        <input type="text" name="roomNo" maxlength="20">
+                    </div>
+                    <div class="form-field">
+                        <label>户型 *</label>
+                        <div style="display: flex; gap: 4px;">
+                            <select name="layoutRoom" style="flex: 1;" required>
+                                <option value="1">1室</option>
+                                <option value="2">2室</option>
+                                <option value="3">3室</option>
+                                <option value="4">4室</option>
+                                <option value="5">5室</option>
+                                <option value="6">6室</option>
+                            </select>
+                            <select name="layoutHall" style="flex: 1;" required>
+                                <option value="1">1厅</option>
+                                <option value="2">2厅</option>
+                                <option value="3">3厅</option>
+                            </select>
+                            <select name="layoutToilet" style="flex: 1;" required>
+                                <option value="1">1卫</option>
+                                <option value="2">2卫</option>
+                                <option value="3">3卫</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>所在楼层 *</label>
+                        <input type="number" name="floor" required min="0">
+                    </div>
+                    <div class="form-field">
+                        <label>总楼层 *</label>
+                        <input type="number" name="totalFloor" required min="1">
+                    </div>
+                    <div class="form-field">
+                        <label>面积(㎡)</label>
+                        <input type="number" name="area" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field" style="flex: 1 1 100%;">
+                        <label>备注</label>
+                        <textarea name="remark" maxlength="2000" rows="3" placeholder="南向、精装修、户型通透等"></textarea>
+                    </div>
+                </div>
+
+                <div class="upload-section">
+                    <div class="upload-section-title">房屋图片</div>
+                    <div class="image-uploader" id="houseImagesContainer"></div>
+                    <label class="upload-trigger">
+                        + 选择房屋图片
+                        <input type="file" accept="image/*" multiple id="houseFileInput">
+                    </label>
+                </div>
+
+                <div class="upload-section">
+                    <div class="upload-section-title">户型图</div>
+                    <div class="image-uploader" id="floorPlanContainer"></div>
+                    <label class="upload-trigger">
+                        + 选择户型图
+                        <input type="file" accept="image/*" multiple id="floorPlanFileInput">
+                    </label>
+                </div>
+            </div>
+        </form>
+        <div class="modal-footer" id="propertyModalFooter">
+            <button type="button" class="btn" id="cancelBtn">取消</button>
+            <button type="submit" class="btn btn-primary" form="propertyForm">保存</button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+    const statusSelect = document.getElementById('statusSelect');
+    const communitySelect = document.getElementById('communitySelect');
+    const roomsSelect = document.getElementById('roomsSelect');
+    const tableHead = document.getElementById('tableHead');
+    const tbody = document.getElementById('propertyTbody');
+    const cardList = document.getElementById('propertyCardList');
+    const modalMask = document.getElementById('modalMask');
+    const form = document.getElementById('propertyForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const houseContainer = document.getElementById('houseImagesContainer');
+    const floorPlanContainer = document.getElementById('floorPlanContainer');
+
+    const communityMap = {};
+    let houseImages = [];
+    let floorPlanImages = [];
+
+    async function loadCommunities() {
+        try {
+            const list = await api.listCommunities();
+            list.forEach(c => { communityMap[c.id] = c.communityName; });
+            const options = '<option value="">全部小区</option>' + list.map(c =>
+                `<option value="${c.id}">${c.communityName}</option>`
+            ).join('');
+            communitySelect.innerHTML = options;
+            form.communityId.innerHTML = list.map(c =>
+                `<option value="${c.id}">${c.communityName}</option>`
+            ).join('');
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    }
+
+    async function search() {
+        try {
+            const list = await api.listProperties({
+                communityId: communitySelect.value,
+                rooms: roomsSelect.value,
+                status: statusSelect.value || undefined,
+            });
+            renderHead();
+            render(list);
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    }
+
+    const STATUS_LABEL = { VACANT: '空置', LIST: '挂牌中', SOLD: '已成交' };
+    const STATUS_TAG = {
+        VACANT: '<span class="tag">空置</span>',
+        LIST: '<span class="tag tag-warning">挂牌中</span>',
+        SOLD: '<span class="tag tag-good">已成交</span>',
+    };
+
+    function renderHead() {
+        tableHead.innerHTML = `
+            <tr>
+                <th>小区</th>
+                <th>栋号</th>
+                <th>门牌号</th>
+                <th>户型</th>
+                <th>楼层</th>
+                <th>面积(㎡)</th>
+                <th>状态</th>
+                <th>录入时间</th>
+                <th style="width: 200px;">操作</th>
+            </tr>
+        `;
+    }
+
+    function render(list) {
+        if (!list || !list.length) {
+            tbody.innerHTML = `<tr><td colspan="9" class="empty">暂无数据</td></tr>`;
+            cardList.innerHTML = `<div class="empty-state"><div class="empty-icon">🏠</div><div class="empty-text">暂无数据</div></div>`;
+            return;
+        }
+        tbody.innerHTML = list.map(p => `
+            <tr>
+                <td data-label="小区">${communityMap[p.communityId] || '-'}</td>
+                <td data-label="栋号">${p.building}</td>
+                <td data-label="门牌号">${p.roomNo || '-'}</td>
+                <td data-label="户型">${p.layout || '-'}</td>
+                <td data-label="楼层">${p.floor} / ${p.totalFloor}</td>
+                <td data-label="面积(㎡)">${p.area != null ? Number(p.area).toFixed(2) : '-'}</td>
+                <td data-label="状态">${STATUS_TAG[p.status] || p.status || '-'}</td>
+                <td data-label="录入时间">${p.createTime ? utils.formatDate(p.createTime) : '-'}</td>
+                <td class="row-actions" data-label="操作">
+                    <a href="/pages/property-detail.html?id=${p.id}">详情</a>
+                    <button onclick="showEdit('${p.id}')">修改</button>
+                    <button class="btn-delete" onclick="removeRow('${p.id}', '${p.building}')">删除</button>
+                </td>
+            </tr>
+        `).join('');
+        cardList.innerHTML = list.map(p => {
+            const community = communityMap[p.communityId] || '-';
+            return `
+                <div class="list-card">
+                    <div class="card-head">
+                        <div class="title">${community} ${p.building}栋 ${p.roomNo || ''}</div>
+                        <div class="status">${STATUS_TAG[p.status] || p.status || '-'}</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="field"><span class="label">户型</span><span class="value">${p.layout || '-'}</span></div>
+                        <div class="field"><span class="label">楼层</span><span class="value">${p.floor}/${p.totalFloor}</span></div>
+                        <div class="field"><span class="label">面积</span><span class="value">${p.area != null ? Number(p.area).toFixed(2) + '㎡' : '-'}</span></div>
+                        <div class="field"><span class="label">录入</span><span class="value">${p.createTime ? utils.formatDate(p.createTime) : '-'}</span></div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="/pages/property-detail.html?id=${p.id}">详情</a>
+                        <button onclick="showEdit('${p.id}')">修改</button>
+                        <button class="btn-delete" onclick="removeRow('${p.id}', '${p.building}')">删除</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ============ 弹窗 ============
+
+    function openModal() {
+        modalMask.style.display = '';
+    }
+
+    function closeModal() {
+        modalMask.style.display = 'none';
+        form.reset();
+        form.id.value = '';
+        houseImages = [];
+        floorPlanImages = [];
+        houseContainer.innerHTML = '';
+        floorPlanContainer.innerHTML = '';
+    }
+
+    function showAdd() {
+        modalTitle.textContent = '新增房源';
+        form.reset();
+        form.id.value = '';
+        houseImages = [];
+        floorPlanImages = [];
+        houseContainer.innerHTML = '';
+        floorPlanContainer.innerHTML = '';
+        openModal();
+    }
+
+    async function showEdit(id) {
+        try {
+            const property = await api.getProperty(id);
+            if (!property) {
+                utils.toast('房源不存在', 'error');
+                return;
+            }
+            modalTitle.textContent = '修改房源';
+            form.id.value = property.id;
+            form.communityId.value = property.communityId;
+            form.building.value = property.building || '';
+            form.roomNo.value = property.roomNo || '';
+            const m = (property.layout || '1室1厅1卫').match(/^(\d+)室(\d+)厅(\d+)卫/);
+            form.layoutRoom.value = m ? m[1] : '1';
+            form.layoutHall.value = m ? m[2] : '1';
+            form.layoutToilet.value = m ? m[3] : '1';
+            form.floor.value = property.floor;
+            form.totalFloor.value = property.totalFloor;
+            form.area.value = property.area || '';
+            form.remark.value = property.remark || '';
+
+            houseImages = [];
+            floorPlanImages = [];
+            houseContainer.innerHTML = '';
+            floorPlanContainer.innerHTML = '';
+            (property.images || []).forEach(img => {
+                if (img.imageType === 'H') {
+                    houseImages.push({ id: img.id, imageUrl: img.imageUrl, imageType: 'H', sortOrder: img.sortOrder });
+                    appendExistingImage(houseContainer, img, houseImages);
+                } else if (img.imageType === 'F') {
+                    floorPlanImages.push({ id: img.id, imageUrl: img.imageUrl, imageType: 'F', sortOrder: img.sortOrder });
+                    appendExistingImage(floorPlanContainer, img, floorPlanImages);
+                }
+            });
+            openModal();
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    }
+
+    function appendExistingImage(container, img, store) {
+        const el = document.createElement('div');
+        el.className = 'image-item';
+        el.innerHTML = `
+            <img src="${utils.imageUrl(img.imageUrl)}" alt="">
+            <button type="button" class="remove-btn">×</button>
+        `;
+        el.querySelector('.remove-btn').onclick = () => {
+            const idx = store.findIndex(s => s.imageUrl === img.imageUrl);
+            if (idx >= 0) store.splice(idx, 1);
+            el.remove();
+        };
+        container.appendChild(el);
+    }
+
+    async function handleFiles(files, type, container, store) {
+        for (const file of files) {
+            if (!file.type.startsWith('image/')) {
+                utils.toast(`${file.name} 不是图片`, 'error');
+                continue;
+            }
+            const item = createImageItem(container, file, type, store);
+            container.appendChild(item.el);
+            try {
+                const url = await api.uploadImage(file);
+                item.markDone(url);
+                store.push({ imageUrl: url, imageType: type, sortOrder: store.length });
+            } catch (e) {
+                item.markFailed(e.message);
+            }
+        }
+    }
+
+    function createImageItem(container, file, type, store) {
+        const el = document.createElement('div');
+        el.className = 'image-item';
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        const overlay = document.createElement('div');
+        overlay.className = 'uploading';
+        overlay.textContent = '上传中...';
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.textContent = '×';
+        removeBtn.style.display = 'none';
+        el.appendChild(img);
+        el.appendChild(overlay);
+        el.appendChild(removeBtn);
+
+        return {
+            el,
+            markDone(url) {
+                overlay.remove();
+                removeBtn.style.display = '';
+                img.src = utils.imageUrl(url);
+                removeBtn.onclick = () => {
+                    const idx = store.findIndex(s => s.imageUrl === url);
+                    if (idx >= 0) store.splice(idx, 1);
+                    el.remove();
+                };
+            },
+            markFailed(msg) {
+                overlay.textContent = '失败';
+                overlay.style.background = 'rgba(255,77,79,0.8)';
+                removeBtn.style.display = '';
+                removeBtn.onclick = () => el.remove();
+            },
+        };
+    }
+
+    document.getElementById('houseFileInput').addEventListener('change', (e) => {
+        handleFiles(e.target.files, 'H', houseContainer, houseImages);
+        e.target.value = '';
+    });
+    document.getElementById('floorPlanFileInput').addEventListener('change', (e) => {
+        handleFiles(e.target.files, 'F', floorPlanContainer, floorPlanImages);
+        e.target.value = '';
+    });
+
+    async function removeRow(id, name) {
+        if (!await utils.confirm(`确认删除房源「${name}」？关联的图片会一并删除，挂牌和成交记录将保留为历史。`)) return;
+        try {
+            await api.deleteProperty(id);
+            utils.toast('删除成功');
+            search();
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    }
+
+    // ============ 表单提交 ============
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const floor = Number(form.floor.value);
+        const totalFloor = Number(form.totalFloor.value);
+        if (floor > totalFloor) {
+            utils.toast('所在楼层不能大于总楼层', 'error');
+            return;
+        }
+        const id = form.id.value;
+        const areaStr = form.area.value.trim();
+        const layout = `${form.layoutRoom.value}室${form.layoutHall.value}厅${form.layoutToilet.value}卫`;
+        const data = {
+            id: id || utils.uuid(),
+            communityId: form.communityId.value,
+            building: form.building.value.trim(),
+            roomNo: form.roomNo.value.trim() || null,
+            layout,
+            floor,
+            totalFloor,
+            area: areaStr ? Number(areaStr) : null,
+            remark: form.remark.value.trim() || null,
+        };
+        const images = [
+            ...houseImages.map((img, i) => ({ ...img, id: img.id || utils.uuid(), sortOrder: i })),
+            ...floorPlanImages.map((img, i) => ({ ...img, id: img.id || utils.uuid(), sortOrder: i })),
+        ];
+        try {
+            if (id) {
+                await api.updateProperty(id, { ...data, images });
+                utils.toast('修改成功');
+            } else {
+                await api.createProperty(data, images);
+                utils.toast('新增成功');
+            }
+            closeModal();
+            search();
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', search);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        statusSelect.value = '';
+        communitySelect.value = '';
+        roomsSelect.value = '';
+        search();
+    });
+    document.getElementById('addBtn').addEventListener('click', showAdd);
+    document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+    document.getElementById('cancelBtn').addEventListener('click', closeModal);
+    modalMask.addEventListener('click', (e) => { if (e.target === modalMask) closeModal(); });
+
+    loadCommunities().then(search);
+
+    // 从详情页返回时（含 bfcache 命中），用当前筛选条件重新查询
+    window.addEventListener('pageshow', (e) => {
+        if (e.persisted) search();
+    });
+</script>
+</body>
+</html>

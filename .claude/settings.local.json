@@ -1,0 +1,6 @@
+{
+  "enabledMcpjsonServers": [
+    "idea-mcp",
+    "chrome-devtools"
+  ]
+}

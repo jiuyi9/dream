@@ -1,0 +1,10 @@
+{
+  "systemConfig": {
+    "baseUrl": "http://ympublish.hikvision.com.cn",
+    "publishPath": "/v1/fastpublish",
+    "envRuntimePath": "/k8s?env={env}",
+    "defaultEnv": "ys7-pb",
+    "allowedEnvs": ["ys7-pb"],
+    "requestTimeoutSeconds": 15
+  }
+}

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小区管理 - 房产交易</title>
+    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/mobile.css">
+</head>
+<body>
+<header class="app-header">
+    <h1>房产交易系统</h1>
+    <nav class="app-nav">
+        <div class="nav-group">
+            <a href="/pages/listings.html">挂牌</a>
+            <a href="/pages/deals.html">成交</a>
+            <a href="/pages/communities.html" class="active">基础信息</a>
+        </div>
+    </nav>
+</header>
+
+<main class="app-main">
+    <div class="tab-bar" id="subTabBar">
+        <a class="tab-btn" href="/pages/properties.html">房源维护</a>
+        <a class="tab-btn active" href="/pages/communities.html">小区信息</a>
+    </div>
+    <h2 class="page-title">小区管理</h2>
+
+    <div class="card">
+        <div class="filter-bar">
+            <input type="text" id="cityFilter" placeholder="按城市筛选">
+            <button class="btn" id="filterBtn">筛选</button>
+            <button class="btn" id="resetBtn">重置</button>
+            <span style="flex: 1;"></span>
+            <button class="btn btn-primary" id="addBtn">+ 新增小区</button>
+        </div>
+        <table class="table has-card-view">
+            <thead>
+                <tr>
+                    <th>小区名称</th>
+                    <th>城市</th>
+                    <th>区域</th>
+                    <th>地址</th>
+                    <th>开发商</th>
+                    <th>创建时间</th>
+                    <th style="width: 200px;">操作</th>
+                </tr>
+            </thead>
+            <tbody id="communityTbody"></tbody>
+        </table>
+        <div class="card-list" id="communityCardList"></div>
+    </div>
+</main>
+
+<!-- 新增/编辑弹窗 -->
+<div class="modal-mask" id="modalMask" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle">新增小区</h3>
+            <button class="modal-close" id="modalCloseBtn">×</button>
+        </div>
+        <form id="communityForm">
+            <div class="modal-body">
+                <input type="hidden" name="id">
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>小区名称 *</label>
+                        <input type="text" name="communityName" required maxlength="20">
+                    </div>
+                    <div class="form-field">
+                        <label>城市</label>
+                        <select name="city">
+                            <option value="">请选择</option>
+                            <optgroup label="直辖市">
+                                <option>北京</option>
+                                <option>上海</option>
+                                <option>天津</option>
+                                <option>重庆</option>
+                            </optgroup>
+                            <optgroup label="热门城市">
+                                <option>深圳</option>
+                                <option>广州</option>
+                                <option>杭州</option>
+                                <option>南京</option>
+                                <option>苏州</option>
+                                <option>成都</option>
+                                <option>武汉</option>
+                                <option>西安</option>
+                                <option>青岛</option>
+                                <option>厦门</option>
+                                <option>宁波</option>
+                                <option>大连</option>
+                            </optgroup>
+                            <optgroup label="省会城市">
+                                <option>石家庄</option>
+                                <option>太原</option>
+                                <option>呼和浩特</option>
+                                <option>沈阳</option>
+                                <option>长春</option>
+                                <option>哈尔滨</option>
+                                <option>合肥</option>
+                                <option>福州</option>
+                                <option>南昌</option>
+                                <option>济南</option>
+                                <option>郑州</option>
+                                <option>长沙</option>
+                                <option>南宁</option>
+                                <option>海口</option>
+                                <option>贵阳</option>
+                                <option>昆明</option>
+                                <option>拉萨</option>
+                                <option>兰州</option>
+                                <option>西宁</option>
+                                <option>银川</option>
+                                <option>乌鲁木齐</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>区域</label>
+                        <select name="district">
+                            <option value="">请选择</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>详细地址</label>
+                        <input type="text" name="address">
+                    </div>
+                    <div class="form-field">
+                        <label>开发商</label>
+                        <input type="text" name="developer">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" id="cancelBtn">取消</button>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 详情弹窗 -->
+<div class="modal-mask" id="detailMask" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>小区详情</h3>
+            <button class="modal-close" id="detailCloseBtn">×</button>
+        </div>
+        <div class="modal-body" id="detailBody"></div>
+        <div class="modal-footer">
+            <button type="button" class="btn" id="detailCloseBtn2">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/city-districts.js"></script>
+<script>
+    const tbody = document.getElementById('communityTbody');
+    const cardList = document.getElementById('communityCardList');
+    const cityFilter = document.getElementById('cityFilter');
+    const modalMask = document.getElementById('modalMask');
+    const detailMask = document.getElementById('detailMask');
+    const form = document.getElementById('communityForm');
+    const modalTitle = document.getElementById('modalTitle');
+
+    // 城市-区域联动
+    form.city.addEventListener('change', () => updateDistricts());
+
+    function updateDistricts(defaultDistrict) {
+        const city = form.city.value;
+        const districts = window.CITY_DISTRICTS[city] || [];
+        form.district.innerHTML = '<option value="">请选择</option>' +
+            districts.map(d => `<option ${d === defaultDistrict ? 'selected' : ''}>${d}</option>`).join('');
+    }
+
+    // ============ 列表加载 ============
+
+    async function loadCommunities(city) {
+        try {
+            const list = city
+                ? await api.listCommunitiesByCity(city)
+                : await api.listCommunities();
+            render(list);
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    }
+
+    function render(list) {
+        if (!list || !list.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty">暂无数据</td></tr>';
+            cardList.innerHTML = '<div class="empty-state"><div class="empty-icon">📍</div><div class="empty-text">暂无数据</div></div>';
+            return;
+        }
+        tbody.innerHTML = list.map(c => `
+            <tr>
+                <td data-label="小区名称">${c.communityName}</td>
+                <td data-label="城市">${c.city || '-'}</td>
+                <td data-label="区域">${c.district || '-'}</td>
+                <td data-label="地址">${c.address || '-'}</td>
+                <td data-label="开发商">${c.developer || '-'}</td>
+                <td data-label="创建时间">${utils.formatDate(c.createTime)}</td>
+                <td class="row-actions" data-label="操作">
+                    <button onclick="showDetail('${c.id}')">详情</button>
+                    <button onclick="showEdit('${c.id}')">修改</button>
+                    <button class="btn-delete" onclick="removeRow('${c.id}', '${c.communityName}')">删除</button>
+                </td>
+            </tr>
+        `).join('');
+        cardList.innerHTML = list.map(c => `
+            <div class="list-card">
+                <div class="card-head">
+                    <div class="title">${c.communityName}</div>
+                    <div class="status"><span class="tag">${c.city || '-'} · ${c.district || '-'}</span></div>
+                </div>
+                <div class="card-body">
+                    <div class="field"><span class="label">地址</span><span class="value">${c.address || '-'}</span></div>
+                    <div class="field"><span class="label">开发商</span><span class="value">${c.developer || '-'}</span></div>
+                    <div class="field full"><span class="label">创建时间</span><span class="value">${utils.formatDate(c.createTime)}</span></div>
+                </div>
+                <div class="card-actions">
+                    <button onclick="showDetail('${c.id}')">详情</button>
+                    <button onclick="showEdit('${c.id}')">修改</button>
+                    <button class="btn-delete" onclick="removeRow('${c.id}', '${c.communityName}')">删除</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ============ 新增/编辑弹窗 ============
+
+    function openModal() {
+        modalMask.style.display = '';
+    }
+
+    function closeModal() {
+        modalMask.style.display = 'none';
+        form.reset();
+        form.id.value = '';
+    }
+
+    async function showAdd() {
+        modalTitle.textContent = '新增小区';
+        form.reset();
+        form.id.value = '';
+        form.city.value = '杭州';
+        updateDistricts('拱墅区');
+        openModal();
+    }
+
+    async function showEdit(id) {
+        try {
+            const list = await api.listCommunities();
+            const c = list.find(x => x.id === id);
+            if (!c) {
+                utils.toast('小区不存在', 'error');
+                return;
+            }
+            modalTitle.textContent = '修改小区';
+            form.id.value = c.id;
+            form.communityName.value = c.communityName || '';
+            form.city.value = c.city || '';
+            updateDistricts(c.district);
+            form.address.value = c.address || '';
+            form.developer.value = c.developer || '';
+            openModal();
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    }
+
+    function showDetail(id) {
+        api.listCommunities().then(list => {
+            const c = list.find(x => x.id === id);
+            if (!c) {
+                utils.toast('小区不存在', 'error');
+                return;
+            }
+            document.getElementById('detailBody').innerHTML = `
+                <table class="table">
+                    <tr><th>小区名称</th><td>${c.communityName}</td></tr>
+                    <tr><th>城市</th><td>${c.city || '-'}</td></tr>
+                    <tr><th>区域</th><td>${c.district || '-'}</td></tr>
+                    <tr><th>详细地址</th><td>${c.address || '-'}</td></tr>
+                    <tr><th>开发商</th><td>${c.developer || '-'}</td></tr>
+                    <tr><th>创建时间</th><td>${utils.formatDate(c.createTime)}</td></tr>
+                    <tr><th>更新时间</th><td>${utils.formatDate(c.updateTime)}</td></tr>
+                </table>
+            `;
+            detailMask.style.display = '';
+        }).catch(e => utils.toast(e.message, 'error'));
+    }
+
+    async function removeRow(id, name) {
+        if (!await utils.confirm(`确认删除小区「${name}」？`)) return;
+        try {
+            await api.deleteCommunity(id);
+            utils.toast('删除成功');
+            loadCommunities(cityFilter.value.trim());
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    }
+
+    // ============ 事件绑定 ============
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = form.id.value;
+        const data = {
+            id: id || utils.uuid(),
+            communityName: form.communityName.value.trim(),
+            city: form.city.value.trim() || null,
+            district: form.district.value.trim() || null,
+            address: form.address.value.trim() || null,
+            developer: form.developer.value.trim() || null,
+        };
+        try {
+            if (id) {
+                await api.updateCommunity(id, data);
+                utils.toast('修改成功');
+            } else {
+                await api.createCommunity(data);
+                utils.toast('新增成功');
+            }
+            closeModal();
+            loadCommunities(cityFilter.value.trim());
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    });
+
+    document.getElementById('addBtn').addEventListener('click', showAdd);
+    document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+    document.getElementById('cancelBtn').addEventListener('click', closeModal);
+    document.getElementById('detailCloseBtn').addEventListener('click', () => detailMask.style.display = 'none');
+    document.getElementById('detailCloseBtn2').addEventListener('click', () => detailMask.style.display = 'none');
+    document.getElementById('filterBtn').addEventListener('click', () => loadCommunities(cityFilter.value.trim()));
+    document.getElementById('resetBtn').addEventListener('click', () => { cityFilter.value = ''; loadCommunities(); });
+
+    // 点遮罩关闭
+    modalMask.addEventListener('click', (e) => { if (e.target === modalMask) closeModal(); });
+    detailMask.addEventListener('click', (e) => { if (e.target === detailMask) detailMask.style.display = 'none'; });
+
+    loadCommunities();
+
+    // 从详情/编辑返回时（含 bfcache 命中），用当前筛选条件重新查询
+    window.addEventListener('pageshow', (e) => {
+        if (e.persisted) loadCommunities(cityFilter.value.trim());
+    });
+</script>
+</body>
+</html>

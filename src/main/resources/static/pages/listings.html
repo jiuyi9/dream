@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>挂牌 - 房产交易系统</title>
+    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/mobile.css">
+</head>
+<body>
+<header class="app-header">
+    <h1>房产交易系统</h1>
+    <nav class="app-nav">
+        <div class="nav-group">
+            <a href="/pages/listings.html" class="active">挂牌</a>
+            <a href="/pages/deals.html">成交</a>
+            <a href="/pages/properties.html">基础信息</a>
+        </div>
+    </nav>
+</header>
+
+<main class="app-main">
+    <h2 class="page-title">挂牌</h2>
+
+    <div class="card">
+        <div class="filter-bar">
+            <select id="communitySelect" style="min-width: 200px;">
+                <option value="">全部小区</option>
+            </select>
+            <select id="roomsSelect" style="min-width: 120px;">
+                <option value="">全部室数</option>
+                <option value="1">1室</option>
+                <option value="2">2室</option>
+                <option value="3">3室</option>
+                <option value="4">4室</option>
+                <option value="5">5室</option>
+                <option value="6">6室</option>
+            </select>
+            <button class="btn btn-primary" id="searchBtn">查询</button>
+            <button class="btn" id="resetBtn">重置</button>
+        </div>
+        <table class="table has-card-view">
+            <thead>
+                <tr>
+                    <th>小区</th>
+                    <th>栋号</th>
+                    <th>门牌号</th>
+                    <th>户型</th>
+                    <th>楼层</th>
+                    <th>面积(㎡)</th>
+                    <th>挂牌价</th>
+                    <th>单价</th>
+                    <th>挂牌时间</th>
+                    <th style="width: 240px;">操作</th>
+                </tr>
+            </thead>
+            <tbody id="propertyTbody"></tbody>
+        </table>
+        <div class="card-list" id="propertyCardList"></div>
+    </div>
+</main>
+
+<script src="/js/api.js"></script>
+<script>
+    const communitySelect = document.getElementById('communitySelect');
+    const roomsSelect = document.getElementById('roomsSelect');
+    const tbody = document.getElementById('propertyTbody');
+    const cardList = document.getElementById('propertyCardList');
+
+    const communityMap = {};
+
+    async function loadCommunities() {
+        try {
+            const list = await api.listCommunities();
+            list.forEach(c => { communityMap[c.id] = c.communityName; });
+            const options = '<option value="">全部小区</option>' + list.map(c =>
+                `<option value="${c.id}">${c.communityName}</option>`
+            ).join('');
+            communitySelect.innerHTML = options;
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    }
+
+    async function search() {
+        try {
+            const list = await api.listProperties({
+                communityId: communitySelect.value,
+                rooms: roomsSelect.value,
+                status: 'LIST',
+            });
+            render(list);
+        } catch (e) {
+            utils.toast(e.message, 'error');
+        }
+    }
+
+    function render(list) {
+        if (!list || !list.length) {
+            tbody.innerHTML = `<tr><td colspan="10" class="empty">暂无挂牌房源</td></tr>`;
+            cardList.innerHTML = `<div class="empty-state"><div class="empty-icon">🏠</div><div class="empty-text">暂无挂牌房源</div></div>`;
+            return;
+        }
+        tbody.innerHTML = list.map(p => `
+            <tr>
+                <td data-label="小区">${communityMap[p.communityId] || '-'}</td>
+                <td data-label="栋号">${p.building}</td>
+                <td data-label="门牌号">${p.roomNo || '-'}</td>
+                <td data-label="户型">${p.layout || '-'}</td>
+                <td data-label="楼层">${p.floor} / ${p.totalFloor}</td>
+                <td data-label="面积(㎡)">${p.area != null ? Number(p.area).toFixed(2) : '-'}</td>
+                <td data-label="挂牌价">${p.listingPrice != null ? utils.formatPrice(p.listingPrice) : '-'}</td>
+                <td data-label="单价">${utils.formatUnitPrice(p.listingPrice, p.area)}</td>
+                <td data-label="挂牌时间">${p.firstListingTime ? utils.formatDate(p.firstListingTime) : '-'}</td>
+                <td class="row-actions" data-label="操作">
+                    <a href="/pages/property-detail.html?id=${p.id}">调价</a>
+                    <a href="/pages/property-detail.html?id=${p.id}">成交</a>
+                    <a href="/pages/property-detail.html?id=${p.id}">详情</a>
+                </td>
+            </tr>
+        `).join('');
+        cardList.innerHTML = list.map(p => {
+            const community = communityMap[p.communityId] || '-';
+            const price = p.listingPrice != null ? utils.formatPriceShort(p.listingPrice) : '-';
+            const unitPrice = utils.formatUnitPriceShort(p.listingPrice, p.area);
+            const thumb = p.floorPlanUrl
+                ? `<img class="card-thumb" src="${utils.imageUrl(p.floorPlanUrl)}" alt="户型图">`
+                : `<div class="card-thumb placeholder">无图</div>`;
+            return `
+                <a class="list-card compact" href="/pages/property-detail.html?id=${p.id}">
+                    ${thumb}
+                    <div class="card-content">
+                        <div class="card-title-row">
+                            <span class="title-text">${community} ${p.building}栋 ${p.roomNo || ''}</span>
+                            <span class="title-time">${p.firstListingTime ? utils.formatDate(p.firstListingTime).substring(0, 10) : '-'}</span>
+                        </div>
+                        <div class="card-meta-row">
+                            <span>${p.layout || '-'}</span>
+                            <span>${p.area != null ? Number(p.area).toFixed(2) + '㎡' : '-'}</span>
+                            <span>${p.floor}/${p.totalFloor}层</span>
+                        </div>
+                        <div class="card-price-row">
+                            <span class="price">¥${price}万</span>
+                            <span>${unitPrice}万/㎡</span>
+                        </div>
+                    </div>
+                </a>
+            `;
+        }).join('');
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', search);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        communitySelect.value = '';
+        roomsSelect.value = '';
+        search();
+    });
+
+    loadCommunities().then(search);
+
+    // 从详情页返回时（含 bfcache 命中），用当前筛选条件重新查询
+    window.addEventListener('pageshow', (e) => {
+        if (e.persisted) search();
+    });
+</script>
+</body>
+</html>

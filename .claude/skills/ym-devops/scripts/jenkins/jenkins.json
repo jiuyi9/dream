@@ -1,0 +1,38 @@
+{
+  "systemConfig": {
+    "url": "https://ebg-ci.hikvision.com.cn",
+    "jobPrefix": "iBuilding-87A0-UNIT-CLOUD-",
+    "defaultJDK": "11.0.15.1",
+    "pollTimeoutSeconds": 600,
+    "pollIntervalSeconds": 5
+  },
+  "jobCache": {
+    "siot": {
+      "jobSuffix": "siot",
+      "component_sections": [
+        "siot-access",
+        "siot-attendance-calculation",
+        "siot-video",
+        "siot-vague",
+        "siot-alarm",
+        "siot-alarm-processor",
+        "siot-iris",
+        "siot-iot",
+        "siot-video-view",
+        "siot-goods-trace",
+        "siot-enterprise",
+        "siot-fast",
+        "siot-visitor",
+        "siot-person",
+        "siot-otda",
+        "siot-parkjoint",
+        "siot-facemgr",
+        "siot-checkpoint",
+        "siot-checkpoint",
+        "siot-attendance",
+        "siot-algorithm",
+        "siot-smart-search"
+      ]
+    }
+  }
+}
