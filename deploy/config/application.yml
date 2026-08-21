@@ -1,0 +1,7 @@
+# 外部配置：覆盖 jar 内 application.yml 的同名键
+# 改完重启 run.bat 即生效，无需重新打包
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/property?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: Hik12345+
